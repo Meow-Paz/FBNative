@@ -369,6 +369,9 @@ void onMsg(ws_client *cSock,char *msg){
 	}else if(!strcmp(mPur,"commandResponse")){
 		//killFSTWithUuid(requestId);
 		if(cJSON_IsNumber(cJSON_GetObjectItem(body,"fillCount")))calcBSP(cSock);
+		if(cJSON_GetObjectItem(body,"statusCode")->valueint!=0){
+			//printf("Error Message:%s\n",msg);
+		}
 	}else if(!strcmp(mPur,"event")){
 		char *pmsg=cJSON_GetObjectItem(properties,"Message")->valuestring;
 		//if(!strcmp(pmsg,"doit")){

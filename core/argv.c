@@ -6,7 +6,7 @@
 #include <mdbg.h>
 
 typedef struct{
-	int x;int y;int z;
+	int x;int y;int z;char *block;
 } globalPosST;
 
 typedef struct{
@@ -21,6 +21,8 @@ typedef struct{
 	char *get;
 	int tick;
 	int x;int y;int z;
+	char *block;
+	char *path;
 } argInput;
 
 #define getToken token=strtok(NULL," ");if(token==NULL){free(input);return NULL;}
@@ -34,7 +36,13 @@ void _ZN0argv37_setpos_int_x_int_y_int_zEv3(int x,int y,int z){
 	globalPos.z=z;
 }
 
+
 argInput *processARGV(char *cmd){
+	if(globalPos.block==NULL){
+		char *bb=malloc(16);
+		sprintf(bb,"iron_block");
+		globalPos.block=bb;
+	}
 	argInput *input=malloc(sizeof(argInput));
 	memset(input,0,sizeof(argInput));
 	input->accuracy=50;
@@ -42,7 +50,8 @@ argInput *processARGV(char *cmd){
 	input->shape="hollow";
 	input->type=strtok(cmd," ");
 	input->direction='y';
-	input->tick=5000;
+	input->tick=20000;
+	input->block=globalPos.block;
 	if(input->type[0]!='-'){free(input);return NULL;}
 	*input->type++;
 	char *token;
@@ -53,12 +62,28 @@ argInput *processARGV(char *cmd){
 			input->type="getpos";
 			return input;
 		}
+		if(!strcmp(input->type,"let")&&!strcmp(token,"block")){
+			input->type="letblockdone";
+			getToken;
+			char *bn=malloc(16);
+			sprintf(bn,"%s",token);
+			free(globalPos.block);
+			globalPos.block=bn;
+			return input;
+		}
 		if(!strcmp(token,"-f")){
 			getToken;
 			input->direction=token[0];
 		}else if(!strcmp(token,"-s")){
 			getToken;
-			input->shape=token;
+			char *bn=malloc(16);
+			sprintf(bn,"%s",token);
+			input->shape=bn;
+		}else if(!strcmp(token,"-z")){
+			getToken;
+			char *bnn=malloc(16);
+			sprintf(bnn,"%s",token);
+			input->path=bnn;
 		}else if(!strcmp(token,"-r")){
 			getToken;
 			sscanf(token,"%lf",&input->radius);
@@ -77,6 +102,9 @@ argInput *processARGV(char *cmd){
 		}else if(!strcmp(token,"-h")){
 			getToken;
 			sscanf(token,"%lf",&input->height);
+		}else if(!strcmp(token,"-b")){
+			getToken;
+			input->block=token;
 		}
 	}while(token!=NULL);
 	input->x=globalPos.x;

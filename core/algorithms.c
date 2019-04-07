@@ -9,13 +9,23 @@
 #include "../Websocket/Errors.h"
 #include "argv.h"
 #include "../cJSON/cJSON.h"
+#include "colortable.h"
+#include "png2raw.h"
 #include <mdbg.h>
 
 #define PI 3.1415926536
 typedef struct{
 	int last;
 	int *array[3];
+	char isCSS;char isEnt;
+	char **csss;
+	char *csd;
 } _session;
+
+typedef struct{
+	char name[32];
+	unsigned char data;
+} block;
 
 /*typedef struct{
   char direction;
@@ -36,6 +46,16 @@ void push(int x,int y,int z,_session *session){
 	session->last++;
 }
 
+void pushC(int x,int y,int z,char *bl,char data,_session *session){
+	if(!session->isCSS)session->isCSS=1;
+	session->array[0][session->last]=x;
+	session->array[1][session->last]=y;
+	session->array[2][session->last]=z;
+	sprintf(session->csss[session->last],"%s",bl);
+	session->csd[session->last]=data;
+	session->last++;
+}
+
 _session *initSession(){
 	_session *ss=malloc(sizeof(_session));
 	memset(ss,0,sizeof(_session));
@@ -45,12 +65,24 @@ _session *initSession(){
 	memset(ss->array[1],0,20*100000*sizeof(int)/3);
 	ss->array[2]=malloc(20*100000*sizeof(int)/3);
 	memset(ss->array[2],0,20*100000*sizeof(int)/3);
+	ss->csss=(char**)malloc(sizeof(char*)*1024*1024*5);
+	for(int i=0;i<1024*1024*5;i++){
+		ss->csss[i]=(char*)malloc(32);
+		memset(ss->csss[i],0,32);
+	}
+	ss->csd=malloc(1024*1024*5);
+	memset(ss->csd,0,1024*1024*5);
 	return ss;
 }
 void freeSession(_session *bsess){
 	free(bsess->array[0]);
 	free(bsess->array[1]);
 	free(bsess->array[2]);
+	/*for(int i=0;i<1024*1024*5;i++){
+		free(bsess->csss[i]);
+	}*/
+	free(bsess->csss);
+	free(bsess->csd);
 	free(bsess);
 }
 
@@ -420,9 +452,230 @@ _session *buildellipticTorus(int x,int y,int z,argInput *input){
 	return multiDimensionalUnique(session);
 }
 
+char getMin(unsigned char *arr,int length){
+	unsigned char min = arr[0];
+	for(int i = 1; i < length; i++) {
+		//unsigned char cur = arr[i];
+		if(arr[i] < min){min = arr[i];}
+	}
+	return min;
+}
+
+int indexOfL(unsigned char val,unsigned char*List,int length){
+	for(int i=0;i<length;i++){
+		if(List[i]==val){
+			return i;
+		}
+	}
+	return -1;
+}
+
+block *get_color(unsigned char r, unsigned char g,unsigned char b) {
+	unsigned char r1,g1,b1;
+	cJSON *colortable=cJSON_Parse(colortable_json);
+	unsigned char *List=malloc(cJSON_GetArraySize(colortable)+1);
+	memset(List,0,cJSON_GetArraySize(colortable)+1);
+	int listlast=0;
+	cJSON *color = NULL;
+	cJSON_ArrayForEach(color,colortable){
+		r1 = r - cJSON_GetArrayItem(cJSON_GetObjectItemCaseSensitive(color,"color"),0)->valueint;
+		g1 = g - cJSON_GetArrayItem(cJSON_GetObjectItemCaseSensitive(color,"color"),1)->valueint;
+		b1 = b - cJSON_GetArrayItem(cJSON_GetObjectItemCaseSensitive(color,"color"),2)->valueint;
+		List[listlast]=(sqrt((r1 * r1) + (g1 * g1) + (b1 * b1)));
+		listlast++;
+	}
+	block *bl=malloc(30);
+	memset(bl,0,sizeof(block));
+	cJSON *sel=cJSON_GetArrayItem(colortable,indexOfL(getMin(List,listlast),List,listlast));
+	sprintf(bl->name,"%s",cJSON_GetObjectItemCaseSensitive(sel,"name")->valuestring);
+	//memcpy(bl->name,cJSON_GetObjectItemCaseSensitive(sel,"name")->valuestring,strlen(cJSON_GetObjectItemCaseSensitive(sel,"name")->valuestring));
+	bl->data=cJSON_GetObjectItemCaseSensitive(sel,"data")->valueint;
+	free(List);
+	cJSON_Delete(colortable);
+	return bl;//[color[List.indexOf(getMin(List))].name,color[List.indexOf(getMin(List))].data];
+}
+
+_session *paintpng(int x,int y,int z,argInput *input){
+	uint32_t w,h;
+	uint8_t*pixels=loadpng(input->path,&w,&h);
+}
+
+int getFS(char* filename)
+{
+	FILE *fp=fopen(filename,"rb");
+	if(!fp)return -1;
+	fseek(fp,0L,SEEK_END);
+	int size=ftell(fp);
+	fclose(fp);
+	return size;
+}
+
+_session *draw(block **map,int mapl,int w,int h,int x,int y,int z){
+	_session *rsl=initSession();
+	int max = w + x;
+	int min = x;
+	int t = 0;
+	while(1){
+		if(x == max){
+			z = z + 1;
+			x = min;
+		}
+		x+=1;
+
+		/*ss.sendCommand([
+		  'setblock',
+		  x = x + 1,
+		  y,
+		  z,
+		  map[t][0],
+		  map[t][1]
+		  ].join(' '));*/
+		pushC(x,y,z,map[t]->name,map[t]->data,rsl);
+
+		t++;
+		if(t == mapl){
+			break;
+		}
+	}
+	return rsl;
+}
+
+_session *Paint(int x, int y, int z,argInput*input){
+	char *path=input->path;
+	int fsize=getFS(input->path);
+	block **BuildList = malloc(sizeof(block)*fsize);
+	memset(BuildList,0,fsize*sizeof(block));
+	int BListlast=0;
+
+	uint32_t w,h;
+	uint8_t *arr = loadpng(input->path,&w,&h);
+	unsigned char **All = malloc(fsize);
+	unsigned char *_d = malloc(w+1);
+	int Allast=0,_dlast=0;
+	memset(_d,0,w+1);
+
+	int co=0;
+	for (int i = 0 ; i < w*h*4; i++){
+		if(co==3){
+			co=0;
+			continue;
+		}
+		_d[_dlast]=arr[i];
+		_dlast++;
+		if(co == 2){
+			All[Allast]=_d;
+			_d = malloc(w+1);
+			memset(_d,0,w+1);
+			_dlast=0;
+			Allast++;
+		}
+		co++;
+	}
+
+	for(int i = 0 ; i < Allast ; i++){
+		block *bn=get_color(All[i][0], All[i][1], All[i][2]);
+		BuildList[BListlast]=bn;
+		BListlast++;
+	}
+
+	_session *ss=draw(BuildList,BListlast, w, h, x,y,z);
+	for(int i=0;i<BListlast;i++){
+		free(BuildList[BListlast]);
+	}
+	free(BuildList);
+	/*for(int i=0;i<Allast-1;i++){
+		printf("%d,%d\n",i,Allast);
+		free(All[i]);
+	}*/
+	//free(All);
+	return ss;
+}
+
 void _ZN0argv37_setpos_int_x_int_y_int_zEv3(int x,int y,int z);
 
-int on=1;
+void setTile(argInput *input,ws_client *sock,_session *bsess){
+	char cmd[256]={0};
+	for(int i=0;i<bsess->last;i++){
+		sprintf(cmd,"fill %d %d %d %d %d %d %s",bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],input->block);
+		sendCommand(cmd,sock);
+		usleep(input->tick);
+	}
+}
+
+void setLongTile(argInput *input,ws_client *sock,_session *bsess){
+	char cmd[256]={0};
+	int h=input->height;
+	for(int i=0;i<bsess->last;i++){
+		sprintf(cmd,"fill %d %d %d %d %d %d %s",bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],bsess->array[0][i],bsess->array[1][i]+h-1,bsess->array[2][i],input->block);
+		sendCommand(cmd,sock);
+		usleep(input->tick);
+	}
+}
+
+
+void setCTile(argInput *input,ws_client *sock,_session *bsess){	
+	char cmd[256]={0};
+	for(int i=0;i<bsess->last;i++){
+		sprintf(cmd,"fill %d %d %d %d %d %d %s %d",bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],bsess->csss[i],bsess->csd[i]);
+		sendCommand(cmd,sock);
+		usleep(input->tick);
+	}
+}
+
+void setLongCTile(argInput *input,ws_client *sock,_session *bsess){
+	char cmd[256]={0};
+	int h=input->height;
+	for(int i=0;i<bsess->last;i++){
+		sprintf(cmd,"fill %d %d %d %d %d %d %s %d",bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],bsess->array[0][i],bsess->array[1][i]+h-1,bsess->array[2][i],bsess->csss[i],bsess->csd[i]);
+		sendCommand(cmd,sock);
+		usleep(input->tick);
+	}
+}
+
+int getMethod(argInput *input,_session *ss){
+	if(ss->isCSS){
+		if(input->height!=1){
+			return 3;
+		}else{
+			return 2;
+		}
+	}else if(ss->isEnt){
+		if(input->height!=1){
+			return 5;
+		}else{
+			return 4;
+		}
+	}
+	if(input->height!=1){
+		return 1;
+	}else{
+		return 0;
+	}
+}
+
+void doit(int Method,argInput *input,ws_client *sock,_session *bsess){
+	switch(Method){
+		case 0:
+			setTile(input,sock,bsess);
+			break;
+		case 1:
+			setLongTile(input,sock,bsess);
+			break;
+		case 2:
+			setCTile(input,sock,bsess);
+			break;
+		case 3:
+			setLongCTile(input,sock,bsess);
+			break;
+		case 4:
+			break;
+		case 5:
+			break;
+		default:
+			break;
+	}
+	return;
+}
 
 void builder(argInput *build,ws_client *sock){
 	_session *bsess;
@@ -444,6 +697,12 @@ void builder(argInput *build,ws_client *sock){
 		bsess=buildpyramid(build->x,build->y,build->z,build);
 	}else if(!strcmp(build->type,"ellipticTorus")){
 		bsess=buildellipticTorus(build->x,build->y,build->z,build);
+	}else if(!strcmp(build->type,"paint")){
+		bsess=Paint(build->x,build->y,build->z,build);
+	}else if(!strcmp(build->type,"letblockdone")){
+		sendText("Data wrote.",sock);
+		free(build);
+		return;
 	}else if(!strcmp(build->type,"getpos")){
 		char *cmdpacket=sendCommandSync("testforblock ~~~ air",sock);
 		int x;int y;int z;
@@ -460,25 +719,21 @@ void builder(argInput *build,ws_client *sock){
 		sprintf(msag,"Position get: %d,%d,%d.",x,y,z);
 		sendText(msag,sock);
 		_ZN0argv37_setpos_int_x_int_y_int_zEv3(x,y,z);
+		free(build);
 		return;
 	}else{
+		char nosuch[50]={0};
+		sprintf(nosuch,"No such method:%s.",build->type);
+		sendText(nosuch,sock);
 		//sendText("No such method.",sock);
-		printf("%s\n",build->type);
+		//printf("%s\n",build->type);
+		free(build);
 		return;
 	}
-	char cmd[256]={0};
 	setBuildingStat(1,bsess->last);
-	for(int i=0;i<bsess->last;i++){
-		sprintf(cmd,"fill %d %d %d %d %d %d iron_block",bsess->array[0][i],bsess->array[1][i],bsess->array[2][i],bsess->array[0][i],bsess->array[1][i],bsess->array[2][i]);
-		//printf("%s\n",cmd);
-		sendCommand(cmd,sock);
-		usleep(build->tick);
-	}
+	doit(getMethod(build,bsess),build,sock,bsess);
 	sendText("Structure has been generated!",sock);
 	setBuildingStat(0,0);
 	free(build);
-	free(bsess->array[0]);
-	free(bsess->array[1]);
-	free(bsess->array[2]);
-	free(bsess);
+	freeSession(bsess);
 }

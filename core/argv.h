@@ -15,6 +15,8 @@ typedef struct{
 	char *get;
 	int tick;
 	int x;int y;int z;
+	char *block;
+	char *path;
 } argInput;
 
 

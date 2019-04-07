@@ -10,5 +10,5 @@ char *profile_getLogo(){
 }
 
 void profile_printBeta(){
-	printf("FBCro (FB C Edition) Internal U Test 1\nBuild %d\nVersion Code:IBv.1.%d.\n",BUILD,BUILD);
+	printf("FBCro (FB C Edition) DEADPNG\nBuild %d\nVersion Code:IBv.dp.%d.\n",BUILD,BUILD);
 }
