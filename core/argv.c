@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "../fbmain.h"
+//#include "../fbmain.h"
 #include "../cJSON/cJSON.h"
 #include <mdbg.h>
 
@@ -30,7 +30,7 @@ typedef struct{
 globalPosST globalPos={0};
 
 
-void _ZN0argv37_setpos_int_x_int_y_int_zEv3(int x,int y,int z){
+void _ZN17argv37_setpos_intERintIvint4Ev3bb(int x,int y,int z){
 	globalPos.x=x;
 	globalPos.y=y;
 	globalPos.z=z;
@@ -50,7 +50,7 @@ argInput *processARGV(char *cmd){
 	input->shape="hollow";
 	input->type=strtok(cmd," ");
 	input->direction='y';
-	input->tick=20000;
+	input->tick=10000;
 	input->block=globalPos.block;
 	if(input->type[0]!='-'){free(input);return NULL;}
 	*input->type++;

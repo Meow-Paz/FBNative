@@ -20,4 +20,4 @@ typedef struct{
 } argInput;
 
 
-argInput *processARGV(char *cmd);
+extern "C" argInput *processARGV(const char *cmd);

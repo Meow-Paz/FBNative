@@ -1,6 +1,6 @@
 #pragma once
 #include <stdio.h>
-#include <string.h>
+#include <string>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -8,27 +8,11 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
-#include "Websocket/Handshake.h"
-#include "Websocket/Communicate.h"
-#include "Websocket/Errors.h"
 
+void sendText(std::string text,void *sock);
 
-void onConnection(void *cSock);
+void sendCommand(const std::string cmd,void *sock,std::string uuid="null");
 
-void onMsgThr(ws_client *cSock,char *msg);
-
-void onDisCon(ws_client *cSock);
-
-void fbinit(void);
-
-void fbinitDone(void);
-
-void sendText(char *text,ws_client *sock);
-
-void _sendCommand(char *cmd,ws_client *sock,char *uuid);
-
-char *sendCommandSync(char *cmd,ws_client *sock);
-
-#define sendCommand(cmd,sock) _sendCommand(cmd,sock,"null")
+const std::string sendCommandSync(const std::string cmd,void *sock);
 
 void setBuildingStat(int stat,int);

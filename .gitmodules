@@ -4,3 +4,9 @@
 [submodule "libpng"]
 	path = libpng
 	url = https://github.com/glennrp/libpng.git
+[submodule "uWebSockets"]
+	path = uWebSockets
+	url = https://github.com/uNetworking/uWebSockets.git
+[submodule "libnbtplusplus"]
+	path = libnbtplusplus
+	url = https://github.com/ljfa-ag/libnbtplusplus.git
