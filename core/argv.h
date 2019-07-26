@@ -2,22 +2,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <string>
+#include <vector>
 
-typedef struct{
+class argInput {
+private:
+	std::vector<std::string> splited;
+	void split(const std::string& s,std::vector<std::string>& sv,const char* delim = " ");
+
+public:
+	std::string block;
 	char direction;
-	char *shape;
+	std::string shape;
 	double radius;
 	double width;
 	double length;
 	double height;
 	double accuracy;
-	char *type;
-	char *get;
-	int tick;
-	int x;int y;int z;
-	char *block;
-	char *path;
-} argInput;
+	std::string type;
+	std::string getval;
+	unsigned int tick;
+	int x,y,z;
+	std::string path;
+	bool invcmd;
 
+	~argInput()=default;
 
-extern "C" argInput *processARGV(const char *cmd);
+	argInput(std::string cmd);
+};

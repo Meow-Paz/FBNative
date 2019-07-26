@@ -1,4 +1,4 @@
 #pragma once
 #include "argv.h"
 
-void builder(argInput *build,void *sock);
+void builder(argInput build,void *sock);

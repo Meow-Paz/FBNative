@@ -121,9 +121,9 @@ public:
 	}
 };
 
-session *buildround(int x, int y, int z, argInput *input){
-	char direction=input->direction;
-	double radius=input->radius;
+session *buildround(int x, int y, int z, argInput input){
+	char direction=input.direction;
+	double radius=input.radius;
 	session *sess = new session();
 	switch (direction) {
 		case 'x':
@@ -160,9 +160,9 @@ session *buildround(int x, int y, int z, argInput *input){
 }
 
 
-session *buildcircle(int x, int y, int z, argInput *input){
-	char direction=input->direction;
-	double radius=input->radius;
+session *buildcircle(int x, int y, int z, argInput input){
+	char direction=input.direction;
+	double radius=input.radius;
 	session *sess = new session();
 	switch (direction) {
 		case 'x':
@@ -199,11 +199,11 @@ session *buildcircle(int x, int y, int z, argInput *input){
 }
 
 
-session *buildsphere(int x,int y,int z,argInput *input){
-	char *shape=input->shape;
-	double radius=input->radius;
+session *buildsphere(int x,int y,int z,argInput input){
+	std::string shape=input.shape;
+	double radius=input.radius;
 	session *sess = new session();
-	if(!strcmp(shape,"hollow")){
+	if(shape=="hollow"){
 		for (double i = -radius; i <= radius; i++) {
 			for (double j = -radius; j <= radius; j++) {
 				for (double k = -radius; k <= radius; k++) {
@@ -213,7 +213,7 @@ session *buildsphere(int x,int y,int z,argInput *input){
 				}
 			}
 		}
-	}else if(!strcmp(shape,"solid")){
+	}else if(shape=="solid"){
 		for (double i = -radius; i <= radius; i++) {
 			for (double j = -radius; j <= radius; j++) {
 				for (double k = -radius; k <= radius; k++) {
@@ -228,10 +228,10 @@ session *buildsphere(int x,int y,int z,argInput *input){
 }
 
 
-session *buildellipse(int x,int y,int z,argInput *input){
-	char direction=input->direction;
-	double length=input->length;
-	double width=input->width;
+session *buildellipse(int x,int y,int z,argInput input){
+	char direction=input.direction;
+	double length=input.length;
+	double width=input.width;
 	session *sess = new session();
 	switch (direction) {
 		case 'x':
@@ -268,10 +268,10 @@ session *buildellipse(int x,int y,int z,argInput *input){
 }
 
 
-session *buildellipsoid(int x,int y,int z,argInput *input){
-	double length=input->length;
-	double width=input->width;
-	double height=input->height;
+session *buildellipsoid(int x,int y,int z,argInput input){
+	double length=input.length;
+	double width=input.width;
+	double height=input.height;
 	session *sess = new session();
 	for (double i = -length; i <= length; i++) {
 		for (double j = -width; j <= width; j++) {
@@ -286,11 +286,11 @@ session *buildellipsoid(int x,int y,int z,argInput *input){
 }
 
 
-session *buildtorus(int x,int y,int z,argInput *input){
-	char direction=input->direction;
-	double length=input->length;
-	double radius=input->radius;
-	double accuracy=input->accuracy;
+session *buildtorus(int x,int y,int z,argInput input){
+	char direction=input.direction;
+	double length=input.length;
+	double radius=input.radius;
+	double accuracy=input.accuracy;
 	session *sess = new session();
 	sess->needMD=true;
 	accuracy = 1 / accuracy;
@@ -324,11 +324,11 @@ session *buildtorus(int x,int y,int z,argInput *input){
 	return sess;//multiDimensionalUnique(session);
 }
 
-session *buildcone(int x,int y,int z,argInput *input){
-	char direction=input->direction;
-	double height=input->height;
-	double radius=input->radius;
-	double accuracy=input->accuracy;
+session *buildcone(int x,int y,int z,argInput input){
+	char direction=input.direction;
+	double height=input.height;
+	double radius=input.radius;
+	double accuracy=input.accuracy;
 	session *sessio = new session();
 	sessio->needMD=true;
 	double max = PI * 2;
@@ -362,16 +362,16 @@ session *buildcone(int x,int y,int z,argInput *input){
 	return sessio;//multiDimensionalUnique(session);
 }
 
-session *buildpyramid(int x,int y,int z,argInput *input){
+session *buildpyramid(int x,int y,int z,argInput input){
 	session *sess = new session();
-	char *shape=input->shape;
-	double radius=input->radius;
-	double height=input->height;
+	std::string shape=input.shape;
+	double radius=input.radius;
+	double height=input.height;
 	for(double y = 0 ; y <= height ; y++){
 		radius--;
 		for (double x = 0 ; x <= radius ; x++){
 			for(double z = 0 ; z <= radius ; z++){
-				if((strcmp(shape,"hollow") && x <= radius && z <= radius) || (x == radius && y == radius)){
+				if((shape!="hollow" && x <= radius && z <= radius) || (x == radius && y == radius)){
 					sess->push(x + x, y + y , z + z);
 					sess->push(x - x, y + y , z + z);
 					sess->push(x + x, y + y , z - z);
@@ -383,12 +383,12 @@ session *buildpyramid(int x,int y,int z,argInput *input){
 	return sess;
 }
 
-session *buildellipticTorus(int x,int y,int z,argInput *input){
-	double radius=input->radius;
-	double accuracy=input->accuracy;
-	double length=input->length;
-	double width=input->width;
-	char direction=input->direction;
+session *buildellipticTorus(int x,int y,int z,argInput input){
+	double radius=input.radius;
+	double accuracy=input.accuracy;
+	double length=input.length;
+	double width=input.width;
+	char direction=input.direction;
 	session *sess=new session();
 	sess->needMD=true;
 	accuracy = 1 / accuracy;
@@ -461,16 +461,6 @@ Block *get_color(unsigned char r, unsigned char g,unsigned char b) {
 	return block;
 }
 
-int getFS(char* filename)
-{
-	FILE *fp=fopen(filename,"rb");
-	if(!fp)return -1;
-	fseek(fp,0L,SEEK_END);
-	int size=ftell(fp);
-	fclose(fp);
-	return size;
-}
-
 csession *draw(std::vector<Block*> list,unsigned int w,unsigned int h,int xx,int yy,int zz){
 	int x=xx,y=yy,z=zz+h;
 	csession *rsl=new csession();
@@ -530,8 +520,8 @@ Block *getBlock(Color c){
 	return new Block(rootc[min]["name"].asString(),rootc[min]["data"].asInt());
 }
 
-csession *Paint(int x, int y, int z,argInput*input,void *sock){
-	FILE *img=fopen(input->path,"r");
+csession *Paint(int x, int y, int z,argInput input,void *sock){
+	FILE *img=fopen(input.path.c_str(),"r");
 	if(!img){
 		sendText("Non-Exist file.",sock);
 		return nullptr;
@@ -583,8 +573,9 @@ csession *Paint(int x, int y, int z,argInput*input,void *sock){
 	return ss;
 }
 
-csession *buildNBT(int x, int y, int z,argInput *input,void *sock){
-	std::ifstream file(/*std::string(input->path)*/"/home/user/FastBuilder/ahh.nbt",std::ios::binary);
+csession *buildNBT(int x, int y, int z,argInput input,void *sock){
+	try{
+	std::ifstream file(input.path,std::ios::binary);
 	zlib::izlibstream nbtz(file);
 	auto rootpair=nbt::io::read_compound(nbtz);
 	nbt::tag_list palette=rootpair.second->at("palette").as<nbt::tag_list>();
@@ -638,31 +629,36 @@ csession *buildNBT(int x, int y, int z,argInput *input,void *sock){
 		ssr->push(x+static_cast<int64_t>(pos[0]),y+static_cast<int64_t>(pos[1]),z+static_cast<int64_t>(pos[2]),block);
 	}
 	return ssr;
+	}catch(std::exception e){
+		return nullptr;
+	}
 }
 
 extern "C" void _ZN17argv37_setpos_intERintIvint4Ev3bb(int x,int y,int z);
 
-void setTile(argInput *input,void *sock,session *bsess){
+void setTile(argInput input,void *sock,session *bsess){
 	char cmd[256]={0};
 	for(auto i:bsess->vmap){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,input->block);
+		sprintf(cmd,"fill %d %d %d %d %d %d %s",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,input.block.c_str());
+		//printf("%s\n",cmd);
 		sendCommand(std::string(cmd),sock);
-		usleep(input->tick);
+		usleep(input.tick);
 	}
 }
 
-void setLongTile(argInput *input,void *sock,session *bsess){
+void setLongTile(argInput input,void *sock,session *bsess){
 	char cmd[256]={0};
-	int h=input->height;
+	int h=input.height;
 	for(auto i:bsess->vmap){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y+h-1,i.first->z,input->block);
+		sprintf(cmd,"fill %d %d %d %d %d %d %s",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y+h-1,i.first->z,input.block.c_str());
+		//printf("%s\n",cmd);
 		sendCommand(cmd,sock);
-		usleep(input->tick);
+		usleep(input.tick);
 	}
 }
 
 
-void setCTile(argInput *input,void *sock,csession *bsess){	
+void setCTile(argInput input,void *sock,csession *bsess){	
 	char cmd[256]={0};
 	std::map<Vec3*,Block*> lp;
 	for(auto i:bsess->vmap){
@@ -679,42 +675,31 @@ void setCTile(argInput *input,void *sock,csession *bsess){
 		if(lpe)continue;
 		sprintf(cmd,"fill %d %d %d %d %d %d %s %hhu",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,i.second->name,i.second->data);
 		sendCommand(cmd,sock);
-		usleep(input->tick);
+		usleep(input.tick);
 	}
-	for(auto i:lp){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s %hhu",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,i.second->name,i.second->data);
-		sendCommand(cmd,sock);
-		usleep(input->tick);
+	if(bsess->lp){
+		for(auto i:lp){
+			sprintf(cmd,"fill %d %d %d %d %d %d %s %hhu",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,i.second->name,i.second->data);
+			sendCommand(cmd,sock);
+			usleep(input.tick);
+		}
 	}
 }
 
-void setLongCTile(argInput *input,void *sock,session *bsess){
+void setLongCTile(argInput input,void *sock,session *bsess){
 	std::cout<<"WARN: setLongCTile doesn't work & won't fix"<<std::endl;
 	return;
 }
 
-int getMethod(argInput *input,session *ss){
-	/*if(ss->isCSS){
-		if(input->height!=1){
-			return 3;
-		}else{
-			return 2;
-		}
-	}else if(ss->isEnt){
-		if(input->height!=1){
-			return 5;
-		}else{
-			return 4;
-		}
-	}*/
-	if(input->height!=1){
+int getMethod(argInput input,session *ss){
+	if(input.height!=1){
 		return 1;
 	}else{
 		return 0;
 	}
 }
 
-void doit(int Method,argInput *input,void *sock,session *bsess){
+void doit(int Method,argInput input,void *sock,session *bsess){
 	switch(Method){
 		case 0:
 			setTile(input,sock,bsess);
@@ -722,12 +707,6 @@ void doit(int Method,argInput *input,void *sock,session *bsess){
 		case 1:
 			setLongTile(input,sock,bsess);
 			break;
-		/*case 2:
-			setCTile(input,sock,bsess);
-			break;
-		case 3:
-			setLongCTile(input,sock,bsess);
-			break;*/
 		case 4:
 		case 5:
 		default:
@@ -736,7 +715,7 @@ void doit(int Method,argInput *input,void *sock,session *bsess){
 	return;
 }
 
-std::map<std::string,std::function<session *(int,int,int,argInput *)>> sessionMethods={{"round",buildround},
+std::map<std::string,std::function<session *(int,int,int,argInput)>> sessionMethods={{"round",buildround},
 	{"circle",buildcircle},
 	{"sphere",buildsphere},
 	{"ellipse",buildellipse},
@@ -746,24 +725,22 @@ std::map<std::string,std::function<session *(int,int,int,argInput *)>> sessionMe
 	{"pyramid",buildpyramid},
 	{"ellipticTorus",buildellipticTorus}
 	};
-std::map<std::string,std::function<csession *(int,int,int,argInput *,void*)>> csessionMethods={
+std::map<std::string,std::function<csession *(int,int,int,argInput,void*)>> csessionMethods={
 	{"paint",Paint},
 	{"NBT",buildNBT}
 };
 
-void builder(argInput *build,void *sock){
-	if(!strcmp(build->type,"letblockdone")){
+void builder(argInput build,void *sock){
+	if(build.type=="letblockdone"){
 		sendText("Data wrote.",sock);
-		free(build);
 		return;
-	}else if(!strcmp(build->type,"getpos")){
+	}else if(build.type=="getpos"){
 		std::string cmdpacket=sendCommandSync("testforblock ~~~ air",sock);
 		int x;int y;int z;
 		Json::Value root;
 		Json::Reader rd;
 		if(!rd.parse(cmdpacket,root)){
 			cfree("sendCommandSync");
-			free(build);
 			sendText("Unable to get pos :(",sock);
 			return;
 		}
@@ -775,43 +752,37 @@ void builder(argInput *build,void *sock){
 		sendText(std::string(msag),sock);
 		_ZN17argv37_setpos_intERintIvint4Ev3bb(x,y,z);
 		cfree("sendCommandSync");
-		free(build);
 		return;
 	}
-	auto result=csessionMethods.find(std::string(build->type));
+	auto result=csessionMethods.find(build.type);
 	if(result!=csessionMethods.end()){
-		csession *sess=result->second(build->x,build->y,build->z,build,sock);
+		csession *sess=result->second(build.x,build.y,build.z,build,sock);
 		if(sess==nullptr){
 			sendText("Failed",sock);
-			free(build);
 			return;
 		}
 		setBuildingStat(1,sess->vmap.size());
 		setCTile(build,sock,sess);
 		sendText("Structure has been generated!",sock);
 		setBuildingStat(0,0);
-		free(build);
 		delete sess;
 		return;
 	}
-	auto resb=sessionMethods.find(std::string(build->type));
+	auto resb=sessionMethods.find(build.type);
 	if(resb!=sessionMethods.end()){
-		session *sess=resb->second(build->x,build->y,build->z,build);
+		session *sess=resb->second(build.x,build.y,build.z,build);
 		if(sess==nullptr){
 			sendText("Failed",sock);
-			free(build);
 			return;
 		}
 		setBuildingStat(1,sess->vmap.size());
 		doit(getMethod(build,sess),build,sock,sess);
 		sendText("Structure has been generated!",sock);
 		setBuildingStat(0,0);
-		free(build);
 		delete sess;
 		return;
 	}
 	sendText("ERROR: No such method.",sock);
-	free(build);
 	return;
 	/*if(!strcmp(build->type,"round")){
 		bsess=buildround(build->x,build->y,build->z,build);

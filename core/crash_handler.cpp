@@ -68,6 +68,7 @@ void CrashHandler::handleSignal(int signal, void *aptr) {
     fflush(stdout);
     printf("Please report this bug.\n");
     if(latestSock!=nullptr)sendText("We're sorry that FBNative is crashed.\nPlease visit console for more details.\nThanks for support",latestSock);
+    sleep(1);
     abort();
 }
 

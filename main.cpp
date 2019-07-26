@@ -202,7 +202,6 @@ void onMsg(void *cSock,std::string msg){
 		return;
 	}
 	
-	
 	std::string mPur=proot["header"]["messagePurpose"].asString();
 	std::string requestId=proot["header"]["requestId"].asString();
 	if(getNMark(requestId)){
@@ -212,14 +211,15 @@ void onMsg(void *cSock,std::string msg){
 		errResend(cSock,requestId);
 	}else if(mPur=="commandResponse"){
 		//killFSTWithUuid(requestId);
-		if(proot["body"].isMember("fillCount"))calcBSP(cSock);
+		/*if(proot["body"].isMember("fillCount"))calcBSP(cSock);
 		if(proot["body"]["statusCode"].asInt()!=0){
 			//printf("Error Message:%s\n",msg);
-		}
+		}*/
 	}else if(mPur=="event"){
+		if(!proot["body"]["properties"].isMember("Message"))return;
 		std::string pmsg=proot["body"]["properties"]["Message"].asString();
-		argInput *inp=processARGV(pmsg.c_str());
-		if(inp!=NULL)builder(inp,cSock);
+		argInput inp=argInput(pmsg);
+		if(!inp.invcmd)builder(inp,cSock);
 	}
 }
 
