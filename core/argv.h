@@ -29,4 +29,5 @@ public:
 	~argInput()=default;
 
 	argInput(std::string cmd);
+	static void setPos(int x,int y,int z);
 };

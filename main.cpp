@@ -17,27 +17,28 @@
 #include "core/algorithms.h"
 #include "core/argv.h"
 #include "core/fbsynckeeper.h"
+#include "core/fbscript.h"
 #include "jsoncpp-1.8.4/include/json/json.h"
 #include <mdbg.h>
 #include "core/crash_handler.h"
+#include <App.h>
+#include "fbmain.h"
+#include <dirent.h>
+#include <elf.h>
 
 int isBuilding=0;
 int allBlocks=0;
 int doneBlocks=0;
 
-
+Algorithms *algorithms;
 std::map<std::string,std::string> packetsMap;
 pthread_mutex_t FSTMutex=PTHREAD_MUTEX_INITIALIZER;
 
-void setBuildingStat(int stat,int abl){
-	isBuilding=stat;
-	allBlocks=abl;
-	doneBlocks=0;
-}
 
 void _send(void *cl,std::string msg);
+void closews(void *cl);
 
-#define send _send
+//#define send _send
 
 char *random_uuid( char buf[37] )
 {
@@ -90,8 +91,53 @@ char *random_uuid( char buf[37] )
 	return buf;
 }
 
+void fbinitDone(void){
+	printf("Server initialized.\n\n");
+	//pthread_t thTT;
+	//pthread_create(&thTT,NULL,(void *(*)(void*))FSTCleaner,NULL);
+	//pthread_mutex_init(&FSTMutex,NULL);
+}
 
-void subscribe(const std::string eventN,void *sock){
+void createWebsocketServer(unsigned short port);
+
+class FastBuilderSession;
+class FastBuilder {
+public:
+	bool shutting_down;
+	Algorithms *algorithms;
+	std::map<void *,FastBuilderSession*> FBSMap;
+
+	FastBuilder(){
+		shutting_down=false;
+		std::cout<<profile_getLogo();
+		algorithms=new Algorithms();
+		initFBS(algorithms);
+		profile_printBeta();
+	}
+
+	~FastBuilder(){
+		shutting_down=true;
+		std::cout<<"Shutting down..."<<std::endl;
+		std::cout<<"Destroying algorithms..."<<std::endl;
+		delete algorithms;
+		std::cout<<"Destroying alived sessions..."<<std::endl;
+		for(auto i:FBSMap){
+			delete i.second;
+		}
+		std::cout<<"FastBuilder Destroyed"<<std::endl;
+	}
+
+};
+
+FastBuilder *fastbuilder;
+
+void FastBuilderSession::sendText(std::string text){
+	std::string cmd;
+	cmd=std::string("say §b")+text;
+	sendCommand(cmd);
+}
+
+void FastBuilderSession::subscribe(const std::string eventN){
 	char rUUID[37]={0};
 	random_uuid(rUUID);
 	Json::Value rootVal;
@@ -109,7 +155,7 @@ void subscribe(const std::string eventN,void *sock){
 	return;
 }
 
-void sendCommand(const std::string cmd,void *sock,std::string uuid="null"){
+void FastBuilderSession::sendCommand(const std::string cmd,std::string uuid){
 	char oUUID[37]={0};
 	std::string rUUID;
 	char isATG=0;
@@ -143,57 +189,57 @@ void sendCommand(const std::string cmd,void *sock,std::string uuid="null"){
 	}
 }
 
-const std::string sendCommandSync(const std::string cmd,void *sock){
+const std::string FastBuilderSession::sendCommandSync(const std::string cmd){
 	char rUUID[37]={0};
 	random_uuid(rUUID);
-	sendCommand(cmd,sock,std::string(rUUID));
+	sendCommand(cmd,std::string(rUUID));
 	setNMark(std::string(rUUID));
 	const char *result=nullptr;
 	while((result=getUValue(std::string(rUUID)))==nullptr){usleep(100000);}
 	return std::string(result);
 }
 
-void calcBSP(void *sock){
-if(!isBuilding)return;
-doneBlocks++;
-//char stu[128]={0};
-//sprintf(stu,"title @s actionbar §b%d/%d (%f/100)",doneBlocks,allBlocks,((float)doneBlocks/(float)allBlocks)*100);
-//sendCommand(std::string(stu),sock);
-}
-
-void sendText(std::string text,void *sock){
-	std::string cmd;
-	cmd=std::string("say §b")+text;
-	sendCommand(cmd,sock);
-}
-
-void onConnection(void *cSock){
-	CrashHandler::registerLSock(cSock);
+FastBuilderSession::FastBuilderSession(void *_sock){
+	busythr=(pthread_t)0;
+	busy=true;
+	algorithms=fastbuilder->algorithms;
+	sock=_sock;
 	std::cout<<"A client connected."<<std::endl;
-	subscribe("PlayerMessage",cSock);
+	subscribe("PlayerMessage");
 	char vst[25]={0};
 	sprintf(vst,"FastbuilderNative Build %d Connected!",BUILD);
-	sendText(vst,cSock);
+	sendText(vst);
+	busy=false;
 }
 
-void onDisCon_DEPRECATED(void *cSock){
-	printf("Client disconnected: %s\n","");
+FastBuilderSession::~FastBuilderSession(){
+	if(busy){
+		std::cout<<"Session is busy.Killing..."<<std::endl;
+		killbusy();
+	}
+	std::cout<<"Connection closed."<<std::endl;
+	closews(sock);
 }
 
-void errResend(void *wsc,std::string msgid){
+void FastBuilderSession::killbusy(){
+	if(busy&&busythr!=(pthread_t)0)pthread_kill(busythr,SIGUSR1);
+	busy=false;
+}
+
+void FastBuilderSession::errResend(std::string msgid){
 	return;
 	pthread_mutex_lock(&FSTMutex);
 	auto res=packetsMap.find(msgid);
 	if(res==packetsMap.end())return;
 	pthread_mutex_unlock(&FSTMutex);
-	sendCommand(packetsMap[msgid],wsc);
+	sendCommand(packetsMap[msgid]);
 	pthread_mutex_lock(&FSTMutex);
 	packetsMap.erase(msgid);
 	pthread_mutex_unlock(&FSTMutex);
 	return;
 }
 
-void onMsg(void *cSock,std::string msg){
+void FastBuilderSession::onMsg(std::string msg){
 	//printf("Message: %s\n",msg);
 	Json::Reader reader;
 	Json::Value proot;
@@ -208,10 +254,10 @@ void onMsg(void *cSock,std::string msg){
 		setUValue(requestId,msg);
 	}
 	if(mPur=="error"){
-		errResend(cSock,requestId);
+		errResend(requestId);
 	}else if(mPur=="commandResponse"){
 		//killFSTWithUuid(requestId);
-		/*if(proot["body"].isMember("fillCount"))calcBSP(cSock);
+		/*if(proot["body"].isMember("fillCount"))calcBSP();
 		if(proot["body"]["statusCode"].asInt()!=0){
 			//printf("Error Message:%s\n",msg);
 		}*/
@@ -219,27 +265,46 @@ void onMsg(void *cSock,std::string msg){
 		if(!proot["body"]["properties"].isMember("Message"))return;
 		std::string pmsg=proot["body"]["properties"]["Message"].asString();
 		argInput inp=argInput(pmsg);
-		if(!inp.invcmd)builder(inp,cSock);
+		if(!inp.invcmd)algorithms->builder(inp,this);
 	}
 }
 
-void fbinit(void){
-	std::cout<<profile_getLogo();
+void FastBuilderSession::send(void*cl,std::string msg){
+	_send(cl,msg);
 }
 
-void fbinitDone(void){
-	profile_printBeta();
-	printf("Server initialized.\n\n");
-	//pthread_t thTT;
-	//pthread_create(&thTT,NULL,(void *(*)(void*))FSTCleaner,NULL);
-	//pthread_mutex_init(&FSTMutex,NULL);
+void onConnection(void *cSock){
+	if(fastbuilder->shutting_down){
+		closews(cSock);
+		return;
+	}
+	fastbuilder->FBSMap[cSock]=new FastBuilderSession(cSock);
 }
 
-void createWebsocketServer(unsigned short port);
+void onMsg(void *cSock,std::string msg){
+	if(fastbuilder->shutting_down)return;
+	auto result=fastbuilder->FBSMap.find(cSock);
+	if(result==fastbuilder->FBSMap.end())return;
+	fastbuilder->FBSMap[cSock]->onMsg(msg);
+}
+
+void FastBuilder_Z____Disconnection(void* ws){
+	if(fastbuilder->shutting_down)return;
+	auto result=fastbuilder->FBSMap.find(ws);
+	if(result==fastbuilder->FBSMap.end())return;
+	fastbuilder->FBSMap[ws]->killbusy();
+	delete fastbuilder->FBSMap[ws];
+	fastbuilder->FBSMap.erase(ws);
+}
+
+std::map<void *,FastBuilderSession*> FastBuilder_Z____GetFBSMap(){
+	return fastbuilder->FBSMap;
+}
 
 int main(){
 	CrashHandler::registerCrashHandler();
-	fbinit();
+	fastbuilder=new FastBuilder();
+	signal(SIGINT,[](int signal){delete fastbuilder;exit(0);});
 	createWebsocketServer(8080);
 	return 0;
 }

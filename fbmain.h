@@ -8,11 +8,30 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
+#include <map>
+#include "core/algorithms.h"
+#include <pthread.h>
 
-void sendText(std::string text,void *sock);
+class Algorithms;
 
-void sendCommand(const std::string cmd,void *sock,std::string uuid="null");
+class FastBuilderSession {
+private:
+	std::map<std::string,std::string> packetsMap;
+	pthread_mutex_t FSTMutex=PTHREAD_MUTEX_INITIALIZER;
+	void *sock;
+	Algorithms *algorithms;
 
-const std::string sendCommandSync(const std::string cmd,void *sock);
-
-void setBuildingStat(int stat,int);
+	void errResend(std::string msgid);
+public:
+	bool busy;
+	pthread_t busythr;
+	void killbusy();
+	void sendText(std::string text);
+	void subscribe(const std::string eventN);
+	void sendCommand(const std::string cmd,std::string uuid="null");
+	const std::string sendCommandSync(const std::string cmd);
+	FastBuilderSession(void *_sock);
+	~FastBuilderSession();
+	void onMsg(std::string msg);
+	void send(void *cl,std::string msg);
+};

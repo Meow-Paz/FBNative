@@ -8,15 +8,12 @@
 #include <execinfo.h>
 #include <dlfcn.h>
 #include "../fbmain.h"
+#include <map>
+
+std::map<void *,FastBuilderSession*> FastBuilder_Z____GetFBSMap();
 
 
 bool CrashHandler::hasCrashed = false;
-
-void *CrashHandler::latestSock = nullptr;
-
-void CrashHandler::registerLSock(void *sock){
-	latestSock=sock;
-}
 
 void CrashHandler::handleSignal(int signal, void *aptr) {
     if (hasCrashed)
@@ -67,7 +64,10 @@ void CrashHandler::handleSignal(int signal, void *aptr) {
     }
     fflush(stdout);
     printf("Please report this bug.\n");
-    if(latestSock!=nullptr)sendText("We're sorry that FBNative is crashed.\nPlease visit console for more details.\nThanks for support",latestSock);
+    std::map<void*,FastBuilderSession*> FBSMap=FastBuilder_Z____GetFBSMap();
+    for(auto i:FBSMap){
+        i.second->sendText("We're sorry that FBNative is crashed.\nPlease visit console for more details.\nThanks for support");
+    }
     sleep(1);
     abort();
 }

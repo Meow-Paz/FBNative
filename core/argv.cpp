@@ -26,13 +26,6 @@ public:
 GPosST globalPos;
 
 
-extern "C" void _ZN17argv37_setpos_intERintIvint4Ev3bb(int x,int y,int z){
-	globalPos.x=x;
-	globalPos.y=y;
-	globalPos.z=z;
-}
-
-
 void argInput::split(const std::string& s,std::vector<std::string>& sv,const char* delim) {
 	sv.clear();
 	char* buffer = new char[s.size() + 1];
@@ -43,6 +36,12 @@ void argInput::split(const std::string& s,std::vector<std::string>& sv,const cha
 	sv.push_back(p);
 	} while ((p = std::strtok(NULL, delim)));
 	return;
+}
+
+void argInput::setPos(int x,int y,int z){
+	globalPos.x=x;
+	globalPos.y=y;
+	globalPos.z=z;
 }
 
 argInput::argInput(std::string cmd){

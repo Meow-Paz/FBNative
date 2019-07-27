@@ -7,10 +7,16 @@
 void onMsg(void *,std::string);
 void onConnection(void *);
 void fbinitDone();
+void FastBuilder_Z____Disconnection(void*);
 
 void _send(void *cl,std::string msg){
 	auto *client=(uWS::WebSocket<false,true>*)cl;
 	client->send(std::string_view(msg),uWS::OpCode::TEXT);
+}
+
+void closews(void *cl){
+	auto *client=(uWS::WebSocket<false,true>*)cl;
+	client->close();
 }
 
 void onCon_newThread(void *ws){
@@ -59,7 +65,7 @@ void createWebsocketServer(unsigned short port){
 		.ping=[](auto*ws){},
 		.pong=[](auto*ws){},
 		.close=[](auto *ws, int code, std::string_view message){
-			
+			FastBuilder_Z____Disconnection((void*)ws);
 		}
 	}).listen(port,[](auto *tk){
 		if(tk){
