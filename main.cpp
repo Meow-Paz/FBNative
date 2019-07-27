@@ -12,7 +12,6 @@
 #include <signal.h>
 #include <map>
 #include <pthread.h>
-#include "cJSON/cJSON.h"
 #include "core/profile.h"
 #include "core/algorithms.h"
 #include "core/argv.h"
