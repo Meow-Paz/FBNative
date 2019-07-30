@@ -14,50 +14,11 @@
 #include "../jsoncpp-1.8.4/include/json/json.h"
 #include <math.h>
 #include "fbscript.h"
+#include <tuple>
 
 
 class FBScriptBuildMethods {
 private:
-	static unsigned int getMin(unsigned int *arr,int length){
-		unsigned int min = arr[0];
-		for(int i = 1; i < length; i++) {
-			//unsigned char cur = arr[i];
-			if(arr[i] < min){min = arr[i];}
-		}
-		return min;
-	}
-
-	static int indexOfL(unsigned int val,unsigned int*List,int length){
-		for(int i=0;i<length;i++){
-			if(List[i]==val){	
-				return i;
-			}
-		}
-		return -1;
-	}
-
-	static Block *get_color(unsigned char r, unsigned char g,unsigned char b) {
-		int r1,g1,b1;
-		Json::Value rootc;
-		Json::Reader reader;
-		reader.parse(colortable_json,rootc);
-		const int size=rootc.size();
-		std::map<unsigned short,unsigned short> list;
-		for(unsigned short i=0;i<size;i++){
-			r1=r-rootc[i]["color"][0].asInt();
-			g1=g-rootc[i]["color"][1].asInt();
-			b1=b-rootc[i]["color"][2].asInt();
-			list[i]=sqrt((r1 * r1) + (g1 * g1) + (b1 * b1));
-		}
-		unsigned short min=list[0];
-		unsigned short index=0;
-		for(unsigned short i=1;i<size;i++){
-			if(list[i] < min){min = list[i];index=i;}
-		}
-		Block *block=new Block(rootc[index]["name"].asString(),(unsigned char)rootc[index]["data"].asInt());
-		return block;
-	}
-
 	static csession *draw(std::vector<Block*> list,unsigned int w,unsigned int h,int xx,int yy,int zz){
 		int x=xx,y=yy,z=zz+h;
 		csession *rsl=new csession();
@@ -106,15 +67,17 @@ private:
 
 	static Block *getBlock(Color c){
 		std::vector<float> list;
-		Json::Value rootc;
-		Json::Reader Jreader;
-		Jreader.parse(colortable_json,rootc);
-		const int size=rootc.size();
+		const int size=colormap.size();
+		unsigned char data;
+		std::string bname;
+		std::vector<unsigned char> color;
 		for(unsigned short i=0;i<size;i++){
-			list.push_back(ColorDistance(c,Color(rootc[i]["color"][0].asInt(),rootc[i]["color"][1].asInt(),rootc[i]["color"][2].asInt())));
+			std::tie(data,bname,color)=colormap[i];
+			list.push_back(ColorDistance(c,Color(color[0],color[1],color[2])));
 		}
 		int min=findMin(list);
-		return new Block(rootc[min]["name"].asString(),rootc[min]["data"].asInt());
+		std::tie(data,bname,color)=colormap[min];
+		return new Block(bname,data);
 	}
 public:
 	static csession *Paint(int x, int y, int z,argInput input,FastBuilderSession *fbsession){

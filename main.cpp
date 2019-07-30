@@ -108,10 +108,10 @@ public:
 
 	FastBuilder(){
 		shutting_down=false;
-		std::cout<<profile_getLogo();
+		std::cout<<Profile::getLogo();
 		algorithms=new Algorithms();
 		initFBS(algorithms);
-		profile_printBeta();
+		Profile::staticV12printInfo();
 	}
 
 	~FastBuilder(){
@@ -300,7 +300,11 @@ std::map<void *,FastBuilderSession*> FastBuilder_Z____GetFBSMap(){
 	return fastbuilder->FBSMap;
 }
 
+#if !defined(shared)
 int main(){
+#else
+int FastBuilder_Start(){
+#endif
 	CrashHandler::registerCrashHandler();
 	fastbuilder=new FastBuilder();
 	signal(SIGINT,[](int signal){delete fastbuilder;exit(0);});

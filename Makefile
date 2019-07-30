@@ -1,8 +1,20 @@
-#WSC = Websocket/Datastructures.c Websocket/Errors.c Websocket/base64.c Websocket/md5.c Websocket/sha1.c Websocket/Communicate.c Websocket/utf8.c Websocket/Handshake.c
+.PHONY: all static shared
 
-all: libpng/.libs/libpng16.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libnbtplusplus/libnbt++.a
+all: uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libnbtplusplus/libnbt++.a
 	node prebuild.js
-	g++ -g -flto -O9 -std=c++17 -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/memorycontroller.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libpng/.libs/libpng16.a -lm -lz -ldl -luv -pthread -o m
+	g++ -g -flto -O3 -std=c++17 -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/memorycontroller.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a -lpng -lm -lz -ldl -luv -pthread -o m
+	rm -rf core/fbbuildinfo.h
+static: libpng/.libs/libpng16.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libnbtplusplus/libnbt++.a
+	node prebuild.js
+	g++ -g -flto -O3 -std=c++17 -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/memorycontroller.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libpng/.libs/libpng16.a -lm -lz -ldl -luv -pthread -static -o m
+	rm -rf core/fbbuildinfo.h
+shared: uWebSockets/uSockets/uSockets.a libraries/libjsoncpp.so libraries/libnbt++.so
+	node prebuild.js
+	g++ -O3 -std=c++17 -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/memorycontroller.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp uWebSockets/uSockets/uSockets.a -Llibraries -lnbt++ -ljsoncpp -lpng -lm -lz -ldl -luv -pthread -shared -D shared=true -o libfastbuildern.so
+	rm -rf core/fbbuildinfo.h
+smallest: uWebSockets/uSockets/uSockets.a libraries/libjsoncpp.so libraries/libnbt++.so
+	node prebuild.js
+	g++ -O3 -std=c++17 -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/memorycontroller.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp uWebSockets/uSockets/uSockets.a -Llibraries -lnbt++ -ljsoncpp -lpng -lm -lz -ldl -luv -pthread -o m
 	rm -rf core/fbbuildinfo.h
 
 libpng/.libs/libpng16.a:
@@ -13,3 +25,9 @@ jsoncpp-1.8.4/src/lib_json/libjsoncpp.a:
 	cd jsoncpp-1.8.4;cmake .;make -j8
 libnbtplusplus/libnbt++.a:
 	cd libnbtplusplus;cmake -DNBT_USE_ZLIB=ON .;make -j8
+libraries/libnbt++.so:
+	cd libnbtplusplus;cmake -DNBT_BUILD_SHARED=ON -DNBT_USE_ZLIB=ON .;make -j8
+	cp libnbtplusplus/libnbt++.so libraries/libnbt++.so
+libraries/libjsoncpp.so:
+	cd jsoncpp-1.8.4;cmake -DBUILD_SHARED_LIBS=ON .;make -j8
+	cp jsoncpp-1.8.4/src/lib_json/libjsoncpp.so* libraries/
