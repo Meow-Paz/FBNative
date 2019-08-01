@@ -103,6 +103,11 @@ public:
 		png_uint_32 height = png_get_image_height(png, info);
 		png_uint_32 bitDepth = png_get_bit_depth(png, info);
 		png_uint_32 channels = png_get_channels(png, info);
+		if(channels<3){
+			fbsession->sendText("Channels must >= 3.");
+			fclose(img);
+			return nullptr;
+		}
 
 		png_bytep* rowPtrs=new png_bytep[height];
 		unsigned long dataSize = width * height * bitDepth * channels / 8;
@@ -118,7 +123,7 @@ public:
 		int _dlast=0;
 		std::vector<Block*> BuildList;
 
-		for (int i = 0 ; i < width*height*4; i++){
+		for (int i = 0 ; i < width*height*channels; i++){
 			_d[_dlast]=data[i];
 			_dlast++;
 			if(_dlast==4/*i != 0 && (i + 1) % 4 == 0*/){

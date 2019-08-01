@@ -23,7 +23,6 @@
 #include <App.h>
 #include "fbmain.h"
 #include <dirent.h>
-#include <elf.h>
 
 int isBuilding=0;
 int allBlocks=0;
