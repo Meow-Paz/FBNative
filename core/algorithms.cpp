@@ -401,7 +401,7 @@ void Algorithms::setLongCTileNOTWORK_(argInput input,FastBuilderSession *fbsessi
 }
 
 int Algorithms::getMethod(argInput input,session *ss){
-	if(input.height!=1){
+	if(input.height!=1&&input.type!="cone"&&input.type!="ellipsoid"&&input.type!="pyramid"){
 		return 1;
 	}else{
 		return 0;
