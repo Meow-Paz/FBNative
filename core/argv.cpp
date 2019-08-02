@@ -57,7 +57,7 @@ argInput::argInput(std::string cmd){
 	width=2;
 	shape="hollow";
 	direction='y';
-	tick=10000;
+	tick=15000;
 
 	split(cmd,splited);
 	if(splited.empty()){

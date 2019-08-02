@@ -4,6 +4,7 @@
 #include <memory>
 #include <functional>
 #include "../fbmain.h"
+#include <climits>
 
 #define PI 3.141592653589793
 
@@ -45,13 +46,13 @@ public:
 
 class session {
 public:
-	std::map<Vec3*,unsigned char> vmap;
+	std::vector<Vec3*> sort;
 	bool needMD;
 	~session(){
-		for(auto i:vmap){
-			delete i.first;
+		for(Vec3 *i:sort){
+			delete i;
 		}
-		vmap.clear();
+		sort.clear();
 	}
 	
 	session(){
@@ -60,18 +61,32 @@ public:
 
 	void push(int x,int y,int z){
 		if(needMD){
-			for(auto i:vmap){
-				if(i.first->x==x&&i.first->y==y&&i.first->z==z)return;
+			for(Vec3 *i:sort){
+				if(i->x==x&&i->y==y&&i->z==z)return;
 			}
 		}
-		vmap[new Vec3(x,y,z)]=1;
+		int smallestc=0;
+		Vec3 smallestVec(INT_MAX,INT_MAX,INT_MAX);
+		int c=0;
+		for(Vec3 *i:sort){
+			if((i->x>x||i->y>y||i->z>z)&&(i->x<smallestVec.x&&i->y<smallestVec.y&&i->z<smallestVec.z)){
+				smallestc=c;
+				smallestVec.x=i->x;
+				smallestVec.y=i->y;
+				smallestVec.z=i->z;
+			}
+			c++;
+		}
+		sort.insert(sort.begin()+smallestc,new Vec3(x,y,z));
 	}
+
 };
 
 class csession {
 public:
 	std::map<Vec3*,Block*> vmap;
 	std::vector<Block*> deleted;
+	std::vector<Vec3*> sort;
 	bool lp;
 	~csession(){
 		for(auto i:vmap){
@@ -87,6 +102,7 @@ public:
 			delete i.second;
 			deleted.push_back(i.second);
 		}
+		sort.clear();
 		vmap.clear();
 	}
 	
@@ -99,11 +115,39 @@ public:
 	}
 
 	void push(int x,int y,int z,std::string bn,unsigned char bd){
-		vmap[new Vec3(x,y,z)]=new Block(bn,bd);
+		Vec3 *tvec=new Vec3(x,y,z);
+		vmap[tvec]=new Block(bn,bd);
+		int smallestc=0;
+		Vec3 smallestVec(INT_MAX,INT_MAX,INT_MAX);
+		int c=0;
+		for(Vec3 *i:sort){
+			if((i->x>x||i->y>y||i->z>z)&&(i->x<smallestVec.x&&i->y<smallestVec.y&&i->z<smallestVec.z)){
+				smallestc=c;
+				smallestVec.x=i->x;
+				smallestVec.y=i->y;
+				smallestVec.z=i->z;
+			}
+			c++;
+		}
+		sort.insert(sort.begin()+smallestc,tvec);
 	}
 
 	void push(int x,int y,int z,Block *block){
-		vmap[new Vec3(x,y,z)]=block;
+		Vec3 *tvec=new Vec3(x,y,z);
+		vmap[tvec]=block;
+		int smallestc=0;
+		Vec3 smallestVec(INT_MAX,INT_MAX,INT_MAX);
+		int c=0;
+		for(Vec3 *i:sort){
+			if((i->x>x||i->y>y||i->z>z)&&(i->x<smallestVec.x&&i->y<smallestVec.y&&i->z<smallestVec.z)){
+				smallestc=c;
+				smallestVec.x=i->x;
+				smallestVec.y=i->y;
+				smallestVec.z=i->z;
+			}
+			c++;
+		}
+		sort.insert(sort.begin()+smallestc,tvec);
 	}
 };
 

@@ -20,7 +20,7 @@
 class FBScriptBuildMethods {
 private:
 	static csession *draw(std::vector<Block*> list,unsigned int w,unsigned int h,int xx,int yy,int zz){
-		int x=xx,y=yy,z=zz+h;
+		int x=xx,y=yy,z=zz+h-1;
 		csession *rsl=new csession();
 		int max = w + x;
 		int min = x;
@@ -30,9 +30,9 @@ private:
 				z = z - 1;
 				x = min;
 			}
-			x+=1;
 
 			rsl->push(x,y,z,list[t]->name,list[t]->data);
+			x+=1;
 
 			t++;
 			if(t == list.size()){
@@ -126,7 +126,7 @@ public:
 		for (int i = 0 ; i < width*height*channels; i++){
 			_d[_dlast]=data[i];
 			_dlast++;
-			if(_dlast==4/*i != 0 && (i + 1) % 4 == 0*/){
+			if(_dlast==channels/*i != 0 && (i + 1) % 4 == 0*/){
 				BuildList.push_back(getBlock(Color(_d[0],_d[1],_d[2])));
 				_dlast=0;
 			}

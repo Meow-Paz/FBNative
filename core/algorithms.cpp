@@ -327,8 +327,8 @@ public:
 
 void Algorithms::setTile(argInput input,FastBuilderSession *fbsession,session *bsess){
 	char cmd[256]={0};
-	for(auto i:bsess->vmap){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,input.block.c_str());
+	for(Vec3 *i:bsess->sort){
+		sprintf(cmd,"fill %d %d %d %d %d %d %s",i->x,i->y,i->z,i->x,i->y,i->z,input.block.c_str());
 		//printf("%s\n",cmd);
 		fbsession->sendCommand(std::string(cmd));
 		if(stopFlag){
@@ -343,8 +343,8 @@ void Algorithms::setTile(argInput input,FastBuilderSession *fbsession,session *b
 void Algorithms::setLongTile(argInput input,FastBuilderSession *fbsession,session *bsess){
 	char cmd[256]={0};
 	int h=input.height;
-	for(auto i:bsess->vmap){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y+h-1,i.first->z,input.block.c_str());
+	for(auto i:bsess->sort){
+		sprintf(cmd,"fill %d %d %d %d %d %d %s",i->x,i->y,i->z,i->x,i->y+h-1,i->z,input.block.c_str());
 		//printf("%s\n",cmd);
 		fbsession->sendCommand(std::string(cmd));
 		if(stopFlag){
@@ -360,19 +360,19 @@ void Algorithms::setLongTile(argInput input,FastBuilderSession *fbsession,sessio
 void Algorithms::setCTile(argInput input,FastBuilderSession *fbsession,csession *bsess){	
 	char cmd[256]={0};
 	std::map<Vec3*,Block*> lp;
-	for(auto i:bsess->vmap){
+	for(Vec3 *i:bsess->sort){
 		bool lpe=false;
 		if(bsess->lp){
 			for(std::string bst:palette_last_place){
-				if(bst==i.second->name){
-					lp[i.first]=i.second;
+				if(bst==bsess->vmap[i]->name){
+					lp[i]=bsess->vmap[i];
 					lpe=true;
 					break;
 				}
 			}
 		}
 		if(lpe)continue;
-		sprintf(cmd,"fill %d %d %d %d %d %d %s %hhu",i.first->x,i.first->y,i.first->z,i.first->x,i.first->y,i.first->z,i.second->name,i.second->data);
+		sprintf(cmd,"fill %d %d %d %d %d %d %s %hhu",i->x,i->y,i->z,i->x,i->y,i->z,bsess->vmap[i]->name,bsess->vmap[i]->data);
 		fbsession->sendCommand(cmd);
 		if(stopFlag){
 			stopFlag=false;
