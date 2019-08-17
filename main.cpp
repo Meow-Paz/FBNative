@@ -181,9 +181,7 @@ void FastBuilderSession::sendCommand(const std::string cmd,std::string uuid){
 	Json::FastWriter fwt;
 	send(sock,fwt.write(packetj));
 	if(isATG){
-		//pthread_mutex_lock(&FSTMutex);
-		//packetsMap[rUUID]=cmd;
-		//pthread_mutex_unlock(&FSTMutex);
+		lossresolver->addCommand(cmd,rUUID);
 	}
 }
 
@@ -198,6 +196,7 @@ const std::string FastBuilderSession::sendCommandSync(const std::string cmd){
 }
 
 FastBuilderSession::FastBuilderSession(void *_sock){
+	lossresolver=new PLResolver(this);
 	busythr=(pthread_t)0;
 	busy=true;
 	algorithms=fastbuilder->algorithms;
@@ -215,6 +214,7 @@ FastBuilderSession::~FastBuilderSession(){
 		std::cout<<"Session is busy.Killing..."<<std::endl;
 		killbusy();
 	}
+	delete lossresolver;
 	std::cout<<"Connection closed."<<std::endl;
 	closews(sock);
 }
@@ -225,15 +225,7 @@ void FastBuilderSession::killbusy(){
 }
 
 void FastBuilderSession::errResend(std::string msgid){
-	return;
-	pthread_mutex_lock(&FSTMutex);
-	auto res=packetsMap.find(msgid);
-	if(res==packetsMap.end())return;
-	pthread_mutex_unlock(&FSTMutex);
-	sendCommand(packetsMap[msgid]);
-	pthread_mutex_lock(&FSTMutex);
-	packetsMap.erase(msgid);
-	pthread_mutex_unlock(&FSTMutex);
+	lossresolver->resendCommand(msgid);
 	return;
 }
 
@@ -254,7 +246,7 @@ void FastBuilderSession::onMsg(std::string msg){
 	if(mPur=="error"){
 		errResend(requestId);
 	}else if(mPur=="commandResponse"){
-		//killFSTWithUuid(requestId);
+		lossresolver->removeCommand(requestId);
 		/*if(proot["body"].isMember("fillCount"))calcBSP();
 		if(proot["body"]["statusCode"].asInt()!=0){
 			//printf("Error Message:%s\n",msg);

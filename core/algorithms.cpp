@@ -513,6 +513,7 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		fbsession->sendText("Structure has been generated!");
 		delete sess;
 		fbsession->busy=false;
+		fbsession->lossresolver->clear();
 		return;
 	}
 	auto resb=sessionMethods.find(build.type);
@@ -530,6 +531,7 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		fbsession->sendText("Structure has been generated!");
 		delete sess;
 		fbsession->busy=false;
+		fbsession->lossresolver->clear();
 		return;
 	}
 	fbsession->sendText("ERROR: No such method.");

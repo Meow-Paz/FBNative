@@ -11,8 +11,9 @@
 #include <map>
 #include "core/algorithms.h"
 #include <pthread.h>
-
+#include "core/packetlossresolver.h"
 class Algorithms;
+class PLResolver;
 
 class FastBuilderSession {
 private:
@@ -23,12 +24,13 @@ private:
 
 	void errResend(std::string msgid);
 public:
+	PLResolver *lossresolver;
 	bool busy;
 	pthread_t busythr;
 	void killbusy();
 	void sendText(std::string text);
 	void subscribe(const std::string eventN);
-	void sendCommand(const std::string cmd,std::string uuid="null");
+	void sendCommand(const std::string cmd,const std::string uuid="null");
 	const std::string sendCommandSync(const std::string cmd);
 	FastBuilderSession(void *_sock);
 	~FastBuilderSession();

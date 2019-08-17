@@ -3,6 +3,7 @@
 #include <App.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <utility>
 
 void onMsg(void *,std::string);
 void onConnection(void *);
@@ -31,9 +32,9 @@ struct onMsgThreadStruct {
 
 void onMsg_newThread(void *strc){
 	try{
-	struct onMsgThreadStruct* sst=(struct onMsgThreadStruct*)strc;
-	onMsg(sst->ws,std::string(sst->msg));
-	}catch(const std::bad_alloc& err){}
+	std::pair<void*,std::string_view> *sst=(std::pair<void*,std::string_view> *)strc;
+	onMsg(sst->first,std::string(sst->second));
+	}catch(const std::exception& err){}
 }
 
 void createWebsocketServer(unsigned short port){
@@ -52,14 +53,15 @@ void createWebsocketServer(unsigned short port){
 			pthread_create(&ptt,&attr,(void *(*)(void*))onCon_newThread,(void*)ws);
 		},
 		.message=[](auto *ws,std::string_view message,uWS::OpCode opcode){
-			struct onMsgThreadStruct tst={0};
-			tst.ws=(void*)ws;
-			tst.msg=message;
+			//struct onMsgThreadStruct tst={0};
+			//tst.ws=(void*)ws;
+			//tst.msg=message;
 			pthread_t ptt;
 			pthread_attr_t attr;
 			pthread_attr_init(&attr);
 			pthread_attr_setdetachstate(&attr,PTHREAD_CREATE_DETACHED);
-			pthread_create(&ptt,&attr,(void *(*)(void*))onMsg_newThread,(void*)&tst);
+			std::pair par=std::make_pair((void*)ws,message);
+			pthread_create(&ptt,&attr,(void *(*)(void*))onMsg_newThread,(void*)&par);
 		},
 		.drain=[](auto *ws){},
 		.ping=[](auto*ws){},
