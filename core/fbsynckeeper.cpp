@@ -2,21 +2,18 @@
 #include <map>
 #include <iostream>
 #include <memory.h>
-#include "memorycontroller.h"
 
 std::map<std::string,std::string> wantedUUIDMap;
 std::map<std::string,bool> needMark;
 
-const char *getUValue(const std::string a){
+std::string getUValue(const std::string a){
 	auto result=wantedUUIDMap.find(a);
 	if(result!=wantedUUIDMap.end()){
-		char *ret=(char*)cmalloc(result->second.size()+1,"sendCommandSync");
-		memset(ret,0,result->second.size()+1);
-		memcpy(ret,result->second.c_str(),result->second.size()+1);
+		std::string wret=result->second;
 		wantedUUIDMap.erase(a);
-		return ret;
+		return wret;
 	}else{
-		return nullptr;
+		return "";
 	}
 }
 

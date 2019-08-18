@@ -8,25 +8,38 @@
 #include <vector>
 #include <cstring>
 #include <memory.h>
+#include <iostream>
+#include <map>
 
 typedef struct{
-	int x;int y;int z;std::string block;
+	int x;int y;int z;std::string block;unsigned short data;
 } globalPosST;
 class GPosST {
 public:
 	int x,y,z;
 	std::string block;
+	unsigned short data;
 	GPosST(){
-		x=0,z=0,y=0;
+		x=0,z=0,y=0,data=0;
 		block="iron_block";
 	}
 };
 
 GPosST globalPos;
 
+unsigned int str_f_replace(std::string& str,const std::string willreplace,const std::string to){
+	unsigned int i=0;
+	std::string::size_type n;
+	while((n=str.find(willreplace))!=std::string::npos){
+		str.replace(str.begin()+n,str.begin()+n+willreplace.size(),to);
+		i++;
+	}
+	return i;
+}
 
-void argInput::split(const std::string& s,std::vector<std::string>& sv,const char* delim) {
-	sv.clear();
+void argInput::split(const std::string& s,std::vector<std::string>& svn,const char* delim) {
+	svn.clear();
+	std::vector<std::string> sv;
 	char* buffer = new char[s.size() + 1];
 	memset((void*)buffer,0,s.size()+1);
 	std::copy(s.begin(), s.end(), buffer);
@@ -34,6 +47,31 @@ void argInput::split(const std::string& s,std::vector<std::string>& sv,const cha
 	do {
 	sv.push_back(p);
 	} while ((p = std::strtok(NULL, delim)));
+	std::string lwa;
+	bool lw=false;
+	for(std::string str:sv){
+		std::string rs=str;
+		str_f_replace(rs,"\\\"","}}}}||||/||||{{{{");
+		unsigned int iww=str_f_replace(rs,"\"","");
+		str_f_replace(rs,"}}}}||||/||||{{{{","\"");
+		if(0!=(iww%2)){
+			if(!lw){
+				lw=true;
+				lwa=rs;
+			}else{
+				lw=false;
+				lwa+=(std::string(" ")+rs);
+				svn.push_back(lwa);std::cout<<lwa<<std::endl;
+			}
+		}else{
+			if(!lw){
+				svn.push_back(rs);
+			}else{
+				lwa+=(std::string(" ")+rs);
+			}
+		}
+	}
+	if(lw)throw std::string("Unterminated string.");
 	return;
 }
 
@@ -44,13 +82,13 @@ void argInput::setPos(int x,int y,int z){
 }
 
 argInput::argInput(std::string cmd){
-	invcmd=false;
 	if(cmd.c_str()[0]!='-'){
-		invcmd=true;
+		throw (unsigned char)254;
 		return;
 	}
 	x=globalPos.x,y=globalPos.y,z=globalPos.z;
 	block=globalPos.block;
+	data=globalPos.data;
 	accuracy=50;
 	height=1;
 	length=2;
@@ -61,7 +99,7 @@ argInput::argInput(std::string cmd){
 
 	split(cmd,splited);
 	if(splited.empty()){
-		invcmd=true;
+		throw (unsigned char)254;
 		return;
 	}
 	type=splited[0].substr(1);
@@ -70,11 +108,21 @@ argInput::argInput(std::string cmd){
 			type="getpos";
 			return;
 		}
-		/*if(type=="let"&&splited[i]=="block"&&i+1<splited.size()){
-			type="letblockdone";
-			globalPos.block=
+		if(type=="let"&&splited[i]=="block"&&i+1<splited.size()){
+			type="dwrote";
+			globalPos.block=splited[i+1];
 			return;
-		}*/
+		}
+		if(type=="let"&&splited[i]=="data"&&i+1<splited.size()){
+			type="dwrote";
+			globalPos.data=std::stoi(splited[i+1]);
+			return;
+		}
+		if(type=="get"){
+			throw std::string("Unexpected GET format.");
+		}else if(type=="let"){
+			throw std::string("Unexpected LET format.");
+		}
 		if(i+1>=splited.size())break;
 		if(splited[i]=="-f"){
 			i++;
@@ -100,6 +148,9 @@ argInput::argInput(std::string cmd){
 		}else if(splited[i]=="-b"){
 			i++;
 			block=splited[i];
+		}else if(splited[i]=="-bd"){
+			i++;
+			data=std::stoi(splited[i]);
 		}else if(splited[i]=="-r"){
 			i++;
 			radius=std::stod(splited[i]);

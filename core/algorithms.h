@@ -42,6 +42,9 @@ public:
 	~Block(){
 		free(name);
 	}
+	bool isAir(){
+		return (strcmp(name,"air")==0);
+	}
 };
 
 class session {
@@ -157,7 +160,7 @@ private:
 	void setTile(argInput input,FastBuilderSession *fbsession,session *bsess);
 	void setLongTile(argInput input,FastBuilderSession *fbsession,session *bsess);
 	void setCTile(argInput input,FastBuilderSession *fbsession,csession *bsess);
-	void setLongCTileNOTWORK_(argInput input,FastBuilderSession *fbsession,session *bsess);
+	void setLongCTile(argInput input,FastBuilderSession *fbsession,csession *bsess);
 	int getMethod(argInput input,session *ss);
 	void doit(int Method,argInput input,FastBuilderSession *fbsession,session *bsess);
 	std::map<std::string,std::function<session *(int,int,int,argInput)>> sessionMethods;

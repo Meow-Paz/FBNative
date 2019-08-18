@@ -4,10 +4,6 @@
 #include <memory>
 #include <stdlib.h>
 #include <stdarg.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
 #include <unistd.h>
 #include <signal.h>
 #include <map>
@@ -18,11 +14,12 @@
 #include "core/fbsynckeeper.h"
 #include "core/fbscript.h"
 #include "jsoncpp-1.8.4/include/json/json.h"
-#include <mdbg.h>
 #include "core/crash_handler.h"
 #include <App.h>
 #include "fbmain.h"
-#include <dirent.h>
+#include <exception>
+#include <stdexcept>
+#include "core/log.h"
 
 int isBuilding=0;
 int allBlocks=0;
@@ -90,7 +87,7 @@ char *random_uuid( char buf[37] )
 }
 
 void fbinitDone(void){
-	printf("Server initialized.\n\n");
+	log::info("Server initialized.\n","fbws");
 	//pthread_t thTT;
 	//pthread_create(&thTT,NULL,(void *(*)(void*))FSTCleaner,NULL);
 	//pthread_mutex_init(&FSTMutex,NULL);
@@ -129,9 +126,9 @@ public:
 
 FastBuilder *fastbuilder;
 
-void FastBuilderSession::sendText(std::string text){
+void FastBuilderSession::sendText(std::string text,bool isError){
 	std::string cmd;
-	cmd=std::string("say §b")+text;
+	cmd=((isError)?std::string("say §4"):std::string("say §b"))+text;
 	sendCommand(cmd);
 }
 
@@ -190,9 +187,9 @@ const std::string FastBuilderSession::sendCommandSync(const std::string cmd){
 	random_uuid(rUUID);
 	sendCommand(cmd,std::string(rUUID));
 	setNMark(std::string(rUUID));
-	const char *result=nullptr;
-	while((result=getUValue(std::string(rUUID)))==nullptr){usleep(100000);}
-	return std::string(result);
+	std::string result;
+	while((result=getUValue(std::string(rUUID)))==""){usleep(100000);}
+	return result;
 }
 
 FastBuilderSession::FastBuilderSession(void *_sock){
@@ -203,9 +200,7 @@ FastBuilderSession::FastBuilderSession(void *_sock){
 	sock=_sock;
 	std::cout<<"A client connected."<<std::endl;
 	subscribe("PlayerMessage");
-	char vst[25]={0};
-	sprintf(vst,"FastbuilderNative Build %d Connected!",BUILD);
-	sendText(vst);
+	sendText("FastbuilderNative build "+std::string(BUILD)+" connected!");
 	busy=false;
 }
 
@@ -254,8 +249,14 @@ void FastBuilderSession::onMsg(std::string msg){
 	}else if(mPur=="event"){
 		if(!proot["body"]["properties"].isMember("Message"))return;
 		std::string pmsg=proot["body"]["properties"]["Message"].asString();
-		argInput inp=argInput(pmsg);
-		if(!inp.invcmd)algorithms->builder(inp,this);
+		try{
+			argInput inp(pmsg);
+			algorithms->builder(inp,this);
+		}catch(std::string ex){
+			sendText(std::string("CCmd Parsing Error: ")+ex,true);
+		}catch(unsigned char i){
+			if(i!=254)throw i;
+		}
 	}
 }
 
@@ -296,9 +297,14 @@ int main(){
 #else
 int FastBuilder_Start(){
 #endif
+	log::init(3);
 	CrashHandler::registerCrashHandler();
 	fastbuilder=new FastBuilder();
-	signal(SIGINT,[](int signal){delete fastbuilder;exit(0);});
+	signal(SIGINT,[](int signal){
+		delete fastbuilder;
+		log::trace("Quit correctly","SIGINT Handler");
+		exit(0);
+	});
 	createWebsocketServer(8080);
 	return 0;
 }

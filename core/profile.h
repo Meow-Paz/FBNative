@@ -12,6 +12,6 @@ public:
 	}
 
 	static void staticV12printInfo(){
-		printf("FB Native Edition\nBuild %d\nVersion Code:v0.1\nAuthor: LNSSPsd\n",BUILD);
+		printf("FB Native Edition\nBuild %s\nVersion Code:v0.1\nAuthor: LNSSPsd\n",BUILD);
 	}
 };

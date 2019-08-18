@@ -6,7 +6,6 @@
 #include <iostream>
 #include "../fbmain.h"
 #include "argv.h"
-#include "memorycontroller.h"
 #include "../libpng/png.h"
 #include "../jsoncpp-1.8.4/include/json/json.h"
 #include <mdbg.h>
@@ -328,7 +327,7 @@ public:
 void Algorithms::setTile(argInput input,FastBuilderSession *fbsession,session *bsess){
 	char cmd[256]={0};
 	for(Vec3 *i:bsess->sort){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s",i->x,i->y,i->z,i->x,i->y,i->z,input.block.c_str());
+		sprintf(cmd,"fill %d %d %d %d %d %d %s %u",i->x,i->y,i->z,i->x,i->y,i->z,input.block.c_str(),input.data);
 		//printf("%s\n",cmd);
 		fbsession->sendCommand(std::string(cmd));
 		if(stopFlag){
@@ -344,7 +343,7 @@ void Algorithms::setLongTile(argInput input,FastBuilderSession *fbsession,sessio
 	char cmd[256]={0};
 	int h=input.height;
 	for(auto i:bsess->sort){
-		sprintf(cmd,"fill %d %d %d %d %d %d %s",i->x,i->y,i->z,i->x,i->y+h-1,i->z,input.block.c_str());
+		sprintf(cmd,"fill %d %d %d %d %d %d %s %u",i->x,i->y,i->z,i->x,i->y+h-1,i->z,input.block.c_str(),input.data);
 		//printf("%s\n",cmd);
 		fbsession->sendCommand(std::string(cmd));
 		if(stopFlag){
@@ -395,8 +394,8 @@ void Algorithms::setCTile(argInput input,FastBuilderSession *fbsession,csession 
 	}
 }
 
-void Algorithms::setLongCTileNOTWORK_(argInput input,FastBuilderSession *fbsession,session *bsess){
-	std::cout<<"WARN: setLongCTile doesn't work & won't fix"<<std::endl;
+void Algorithms::setLongCTile(argInput input,FastBuilderSession *fbsession,csession *bsess){
+	setCTile(input,fbsession,bsess);
 	return;
 }
 
@@ -465,17 +464,21 @@ bool Algorithms::registerSimpleCommand(std::string command_name,std::function<se
 
 void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 	if(build.type=="stop"){
+		if(!fbsession->busy){
+			fbsession->sendText("Mark Stop: Failed,no session is running.",true);
+			return;
+		}
 		stopFlag=true;
 		return;
 	}
 	if(fbsession->busy){
-		fbsession->sendText("Session is busy,please wait until current job done.");
+		fbsession->sendText("Session is still busy,please wait until current job done.",true);
 		return;
 	}
 	signal(SIGUSR1,[](int s){
 		pthread_exit(nullptr);
 	});
-	if(build.type=="letblockdone"){
+	if(build.type=="dwrote"){
 		fbsession->sendText("Data wrote.");
 		return;
 	}else if(build.type=="getpos"){
@@ -484,8 +487,7 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		Json::Value root;
 		Json::Reader rd;
 		if(!rd.parse(cmdpacket,root)){
-			cfree("sendCommandSync");
-			fbsession->sendText("Unable to get pos :(");
+			fbsession->sendText("Unable to get pos,Please try again. :(");
 			return;
 		}
 		x=root["body"]["position"]["x"].asInt();
@@ -495,7 +497,9 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		sprintf(msag,"Position got: %d,%d,%d.",x,y,z);
 		fbsession->sendText(std::string(msag));
 		argInput::setPos(x,y,z);
-		cfree("sendCommandSync");
+		return;
+	}else if(build.type=="get"||build.type=="let"){
+		fbsession->sendText("ERROR: Unexpected format.");
 		return;
 	}
 	auto result=csessionMethods.find(build.type);
@@ -504,7 +508,7 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		fbsession->busythr=pthread_self();
 		csession *sess=result->second(build.x,build.y,build.z,build,fbsession);
 		if(sess==nullptr){
-			fbsession->sendText("Failed.");
+			fbsession->sendText("Failed.",true);
 			fbsession->busy=false;
 			return;
 		}
@@ -522,7 +526,7 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		fbsession->busythr=pthread_self();
 		session *sess=resb->second(build.x,build.y,build.z,build);
 		if(sess==nullptr){
-			fbsession->sendText("Failed");
+			fbsession->sendText("Failed",true);
 			fbsession->busy=false;
 			return;
 		}
@@ -534,82 +538,6 @@ void Algorithms::builder(argInput build,FastBuilderSession *fbsession){
 		fbsession->lossresolver->clear();
 		return;
 	}
-	fbsession->sendText("ERROR: No such method.");
+	fbsession->sendText("ERROR: No such method.",true);
 	return;
-	/*if(!strcmp(build->type,"round")){
-		bsess=buildround(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"circle")){
-		bsess=buildcircle(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"sphere")){
-		bsess=buildsphere(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"ellipse")){
-		bsess=buildellipse(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"ellipsoid")){
-		bsess=buildellipsoid(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"torus")){
-		bsess=buildtorus(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"cone")){
-		bsess=buildcone(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"pyramid")){
-		bsess=buildpyramid(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"ellipticTorus")){
-		bsess=buildellipticTorus(build->x,build->y,build->z,build);
-	}else if(!strcmp(build->type,"paint")){
-		csess=Paint(build->x,build->y,build->z,build,sock);
-		if(csess==nullptr){
-			sendText("Failed");
-			free(build);
-			return;
-		}
-		isCsess=true;
-	}else if(!strcmp(build->type,"nbt")){
-		csess=Paint(build->x,build->y,build->z,build,sock);
-		if(csess==nullptr){
-			sendText("Failed",sock);
-			free(build);
-			return;
-		}
-		isCsess=true;
-	}else if(!strcmp(build->type,"getpos")){
-		std::string cmdpacket=sendCommandSync("testforblock ~~~ air",sock);
-		int x;int y;int z;
-		Json::Value root;
-		Json::Reader rd;
-		if(!rd.parse(cmdpacket,root)){
-			cfree("sendCommandSync");
-			free(build);
-			sendText("Unable to get pos :(",sock);
-			return;
-		}
-		x=root["body"]["position"]["x"].asInt();
-		y=root["body"]["position"]["y"].asInt();
-		z=root["body"]["position"]["z"].asInt();
-		char msag[32]={0};
-		sprintf(msag,"Position got: %d,%d,%d.",x,y,z);
-		sendText(std::string(msag),sock);
-		_ZN17argv37_setpos_intERintIvint4Ev3bb(x,y,z);
-		cfree("sendCommandSync");
-		free(build);
-		return;
-	}else{
-		char nosuch[50]={0};
-		sprintf(nosuch,"No such method:%s.",build->type);
-		sendText(nosuch,sock);
-		//sendText("No such method.",sock);
-		//printf("%s\n",build->type);
-		free(build);
-		return;
-	}
-	if(isCsess){
-		setBuildingStat(1,csess->vmap.size());
-		setCTile(build,sock,csess);
-	}else{
-		setBuildingStat(1,bsess->vmap.size());
-		doit(getMethod(build,bsess),build,sock,bsess);
-	}
-	sendText("Structure has been generated!",sock);
-	setBuildingStat(0,0);
-	free(build);
-	if(isCsess)delete csess;
-	if(!isCsess)delete bsess;*/
 }

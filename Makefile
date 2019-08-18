@@ -1,21 +1,22 @@
 .PHONY: all static shared
-CPPFILES = -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/memorycontroller.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp core/packetlossresolver.cpp
+CPPFILES = -Iinclude -Ilibnbtplusplus -Ilibnbtplusplus/include -IuWebSockets/src -IuWebSockets/uSockets/src main.cpp core/argv.cpp core/log.cpp core/crash_handler.cpp core/fbscript.cpp core/algorithms.cpp core/fbws.cpp core/fbsynckeeper.cpp core/packetlossresolver.cpp
+
 
 all: uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libnbtplusplus/libnbt++.a
 	node prebuild.js
-	g++ -g -flto -O3 -std=c++17 $(CPPFILES) libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a -lpng -lm -lz -ldl -luv -pthread -o m
+	g++ -flto -Os -std=c++17 $(CPPFILES) libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a -lpng -lm -lz -ldl -luv -pthread -o m
 	rm -rf core/fbbuildinfo.h
 static: libpng/.libs/libpng16.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libnbtplusplus/libnbt++.a
 	node prebuild.js
-	g++ -g -flto -O3 -std=c++17 $(CPPFILES) libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libpng/.libs/libpng16.a -lm -lz -ldl -luv -pthread -static -o m
+	g++ -g -flto -Os -std=c++17 $(CPPFILES) libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libpng/.libs/libpng16.a -lm -lz -ldl -luv -pthread -static -o m
 	rm -rf core/fbbuildinfo.h
 shared: uWebSockets/uSockets/uSockets.a libraries/libjsoncpp.so libraries/libnbt++.so
 	node prebuild.js
-	g++ -O3 -std=c++17 $(CPPFILES) uWebSockets/uSockets/uSockets.a -Llibraries -lnbt++ -ljsoncpp -lpng -lm -lz -ldl -luv -pthread -shared -D shared=true -o libfastbuildern.so
+	g++ -Os -std=c++17 $(CPPFILES) uWebSockets/uSockets/uSockets.a -Llibraries -lnbt++ -ljsoncpp -lpng -lm -lz -ldl -luv -pthread -shared -D shared=true -o libfastbuildern.so
 	rm -rf core/fbbuildinfo.h
 smallest: uWebSockets/uSockets/uSockets.a libraries/libjsoncpp.so libraries/libnbt++.so
 	node prebuild.js
-	g++ -O3 -std=c++17 $(CPPFILES) uWebSockets/uSockets/uSockets.a -Llibraries -lnbt++ -ljsoncpp -lpng -lm -lz -ldl -luv -pthread -o m
+	g++ -Os -std=c++17 $(CPPFILES) uWebSockets/uSockets/uSockets.a -Llibraries -lnbt++ -ljsoncpp -lpng -lm -lz -ldl -luv -pthread -o m
 	rm -rf core/fbbuildinfo.h
 
 libpng/.libs/libpng16.a:

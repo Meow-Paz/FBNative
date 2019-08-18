@@ -28,7 +28,7 @@ public:
 	bool busy;
 	pthread_t busythr;
 	void killbusy();
-	void sendText(std::string text);
+	void sendText(std::string text,bool isError=false);
 	void subscribe(const std::string eventN);
 	void sendCommand(const std::string cmd,const std::string uuid="null");
 	const std::string sendCommandSync(const std::string cmd);

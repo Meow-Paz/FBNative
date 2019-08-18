@@ -34,12 +34,12 @@ bool PLResolver::resendCommand(const std::string uuid){
 
 void PLResolver::clear(){
 	pkmutex.lock();
-	unsigned int show=0;
+	/*unsigned int show=0;
 	for(auto i:pkmap){
 		session->sendCommand(i.second,i.first);
 		show++;
 	}
-	if(show!=0)std::cout<<"[PLResolver|Trace] Still have "<<show<<" packets to send";
+	if(show!=0)std::cout<<"[PLResolver|Trace] Still have "<<show<<" packets to send";*/
 	pkmap.clear();
 	pkmutex.unlock();
 }

@@ -83,13 +83,13 @@ public:
 	static csession *Paint(int x, int y, int z,argInput input,FastBuilderSession *fbsession){
 		FILE *img=fopen(input.path.c_str(),"r");
 		if(!img){
-			fbsession->sendText("Non-Exist file.");
+			fbsession->sendText("Non-Exist file.",true);
 			return nullptr;
 		}
 		unsigned char sig[8];
 		fread(sig,1,8,img);
 		if(!png_check_sig(sig,8)){
-			fbsession->sendText("Not a png file.");
+			fbsession->sendText("Not a png file.",true);
 			fclose(img);
 			return nullptr;
 		}
@@ -191,6 +191,7 @@ public:
 		for(nbt::value &item:blocks){
 			Block *block=resolvedPalettes[static_cast<int64_t>(item.at("state"))];
 			if(block==nullptr)continue;
+			if(block->isAir())continue;
 			nbt::tag_list pos=item.at("pos").as<nbt::tag_list>();
 			ssr->push(x+static_cast<int64_t>(pos[0]),y+static_cast<int64_t>(pos[1]),z+static_cast<int64_t>(pos[2]),block);
 		}

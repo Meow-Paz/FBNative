@@ -12,6 +12,7 @@ private:
 
 public:
 	std::string block;
+	unsigned short data;
 	char direction;
 	std::string shape;
 	double radius;
@@ -24,7 +25,6 @@ public:
 	unsigned int tick;
 	int x,y,z;
 	std::string path;
-	bool invcmd;
 
 	~argInput()=default;
 
