@@ -1,4 +1,4 @@
-name: CI
+name: Main
 
 on: [push]
 
@@ -9,6 +9,10 @@ jobs:
     
     steps:
     - uses: actions/checkout@v1
+    - name: prepare
+      run: |
+        git submodule init
+        git submodule checkout
     - name: make
       run: make static
  
