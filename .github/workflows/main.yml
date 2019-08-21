@@ -13,6 +13,10 @@ jobs:
       run: |
         git submodule init
         git submodule update
+        cd uWebSockets
+        git submodule init
+        git submodule update
+        cd ..
     - name: make
       run: make static
  
