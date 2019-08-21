@@ -8,7 +8,7 @@ all: uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a lib
 	rm -rf core/fbbuildinfo.h
 static: libpng/.libs/libpng16.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libnbtplusplus/libnbt++.a
 	node prebuild.js
-	g++ -g -flto -Os -std=c++17 $(CPPFILES) libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libpng/.libs/libpng16.a -lm -lz -ldl -luv -pthread -static -o m
+	g++ -flto -Os -std=c++17 $(CPPFILES) libnbtplusplus/libnbt++.a uWebSockets/uSockets/uSockets.a jsoncpp-1.8.4/src/lib_json/libjsoncpp.a libpng/.libs/libpng16.a -lm -lz -ldl -luv -pthread -static -o m
 	rm -rf core/fbbuildinfo.h
 shared: uWebSockets/uSockets/uSockets.a libraries/libjsoncpp.so libraries/libnbt++.so
 	node prebuild.js
