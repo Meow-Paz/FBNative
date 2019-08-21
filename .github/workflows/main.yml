@@ -12,7 +12,7 @@ jobs:
     - name: prepare
       run: |
         git submodule init
-        git submodule checkout
+        git submodule update
     - name: make
       run: make static
  
