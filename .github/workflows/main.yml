@@ -11,6 +11,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: prepare
       run: |
+        apt install cxxtest
         git submodule init
         git submodule update
         cd uWebSockets
