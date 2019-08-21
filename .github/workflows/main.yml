@@ -20,4 +20,7 @@ jobs:
         cd ..
     - name: make
       run: make static
- 
+    - uses: actions/upload-artifact@master
+      with:
+        name: fastbuilder-${GITHUB_SHA}
+        path: m
